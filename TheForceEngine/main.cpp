@@ -691,6 +691,10 @@ int main(int argc, char* argv[])
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
+		// TFE: Process gamepad cursor movement and menu input for gamepad-only navigation
+		TFE_Input::updateGamepadCursor();
+		TFE_Input::handleGamepadMenuInput();
+
 		// Inputs Main Entry - skip frame any further processing during replay pause
 		if (!inputMapping_handleInputs())
 		{

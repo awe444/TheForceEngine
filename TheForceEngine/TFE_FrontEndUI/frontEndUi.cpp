@@ -4089,4 +4089,16 @@ namespace TFE_FrontEndUI
 	{
 		return s_subUI == FEUI_MODS;
 	}
+
+	// TFE: Gamepad navigation support functions for menu cursor movement and A button clicks
+	AppState getAppState()
+	{
+		return s_appState;
+	}
+
+	bool isInMenuContext()
+	{
+		// Return true if we're in the main menu or any sub-menu where cursor navigation is expected
+		return s_appState == APP_STATE_MENU;
+	}
 }

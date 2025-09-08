@@ -2,9 +2,11 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 namespace TFE_Input
 {
@@ -527,5 +529,70 @@ namespace TFE_Input
 	const char* getKeyboardModifierName(KeyModifier mod)
 	{
 		return c_keyModNames[mod];
+	}
+
+	// TFE: Gamepad cursor movement for menu navigation
+	// Constants for gamepad cursor movement
+	static const f32 GAMEPAD_CURSOR_SPEED = 400.0f;  // Base cursor speed (pixels per second)
+	static const f32 GAMEPAD_DEADZONE = 0.1f;        // 10% deadzone as specified
+	static const f32 GAMEPAD_ACCEL_POWER = 1.25f;    // Acceleration power for finer control
+
+	void updateGamepadCursor()
+	{
+		// Only process gamepad cursor movement when in menu context
+		if (!TFE_FrontEndUI::isInMenuContext())
+		{
+			return;
+		}
+
+		// Get left stick axes
+		f32 leftX = getAxis(AXIS_LEFT_X);
+		f32 leftY = getAxis(AXIS_LEFT_Y);
+
+		// Apply deadzone
+		f32 magnitude = sqrtf(leftX * leftX + leftY * leftY);
+		if (magnitude < GAMEPAD_DEADZONE)
+		{
+			return; // No movement within deadzone
+		}
+
+		// Normalize and remove deadzone
+		leftX = leftX / magnitude;
+		leftY = leftY / magnitude;
+		f32 normalizedMagnitude = (magnitude - GAMEPAD_DEADZONE) / (1.0f - GAMEPAD_DEADZONE);
+
+		// Apply acceleration curve for finer control at low speeds, faster at high speeds
+		f32 acceleratedMagnitude = powf(normalizedMagnitude, GAMEPAD_ACCEL_POWER);
+
+		// Calculate cursor delta (assume 60 fps for frame delta)
+		f32 frameTime = 1.0f / 60.0f; // TODO: Use actual frame time if available
+		s32 deltaX = (s32)(leftX * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
+		s32 deltaY = (s32)(leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
+
+		// Generate synthetic relative mouse movement
+		if (deltaX != 0 || deltaY != 0)
+		{
+			setRelativeMousePos(deltaX, deltaY);
+		}
+	}
+
+	void handleGamepadMenuInput()
+	{
+		// Only process gamepad menu input when in menu context
+		if (!TFE_FrontEndUI::isInMenuContext())
+		{
+			return;
+		}
+
+		// Handle A button as left mouse click for menu interaction
+		if (buttonPressed(CONTROLLER_BUTTON_A))
+		{
+			setMouseButtonDown(MBUTTON_LEFT);
+		}
+		else if (!buttonDown(CONTROLLER_BUTTON_A) && mouseDown(MBUTTON_LEFT))
+		{
+			// Release mouse button when A button is released
+			setMouseButtonUp(MBUTTON_LEFT);
+		}
 	}
 }
