@@ -536,6 +536,7 @@ namespace TFE_Input
 	static const f32 GAMEPAD_CURSOR_SPEED = 400.0f;  // Base cursor speed (pixels per second)
 	static const f32 GAMEPAD_DEADZONE = 0.1f;        // 10% deadzone as specified
 	static const f32 GAMEPAD_ACCEL_POWER = 1.25f;    // Acceleration power for finer control
+	static bool s_gamepadMouseButtonDown = false;     // Track if A button is simulating mouse button
 
 	void updateGamepadCursor()
 	{
@@ -581,18 +582,28 @@ namespace TFE_Input
 		// Only process gamepad menu input when in menu context
 		if (!TFE_FrontEndUI::isInMenuContext())
 		{
+			// Reset gamepad mouse state when leaving menu context
+			if (s_gamepadMouseButtonDown)
+			{
+				setMouseButtonUp(MBUTTON_LEFT);
+				s_gamepadMouseButtonDown = false;
+			}
 			return;
 		}
 
 		// Handle A button as left mouse click for menu interaction
-		if (buttonPressed(CONTROLLER_BUTTON_A))
+		bool aButtonPressed = buttonPressed(CONTROLLER_BUTTON_A);
+		bool aButtonDown = buttonDown(CONTROLLER_BUTTON_A);
+
+		if (aButtonPressed && !s_gamepadMouseButtonDown)
 		{
 			setMouseButtonDown(MBUTTON_LEFT);
+			s_gamepadMouseButtonDown = true;
 		}
-		else if (!buttonDown(CONTROLLER_BUTTON_A) && mouseDown(MBUTTON_LEFT))
+		else if (!aButtonDown && s_gamepadMouseButtonDown)
 		{
-			// Release mouse button when A button is released
 			setMouseButtonUp(MBUTTON_LEFT);
+			s_gamepadMouseButtonDown = false;
 		}
 	}
 }
