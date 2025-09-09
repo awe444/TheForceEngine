@@ -24,4 +24,7 @@ namespace TFE_DarkForces
 	void agentMenu_createNewAgent();
 	void agentMenu_setAgentName(const char* name);
 	void agentMenu_resetState();
+	
+	// TFE: Function to check if agent menu is open for gamepad cursor support
+	JBool agentMenu_isOpen();
 }

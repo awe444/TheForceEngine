@@ -70,6 +70,7 @@ namespace TFE_DarkForces
 	static JBool s_removeAgentDlg = JFALSE;
 	static JBool s_quitConfirmDlg = JFALSE;
 	static JBool s_missionBegin = JFALSE;
+	static JBool s_agentMenuOpen = JFALSE;  // TFE: Track when agent menu is active for gamepad support
 	static EditBox s_editBox = {};
 	
 	static u8 s_menuPalette[768];
@@ -112,6 +113,9 @@ namespace TFE_DarkForces
 	// TFE: Gamepad navigation functions (referencing commit 508f2007fb63 for parity)
 	void handleGamepadNavigation();
 	void handleGamepadDialogNavigation();
+	
+	// TFE: Function to check if agent menu is open for gamepad support
+	JBool agentMenu_isOpen();
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -128,12 +132,16 @@ namespace TFE_DarkForces
 		s_gamepadFocusArea = FOCUS_AGENT_LIST;
 		s_gamepadButtonFocus = AGENT_NEW;
 		s_gamepadDialogFocus = NEW_AGENT_NO;
+		s_agentMenuOpen = JFALSE;  // TFE: Reset menu open state
 		
 		delt_resetState();
 	}
 
 	JBool agentMenu_update(s32* levelIndex)
 	{
+		// TFE: Mark menu as open for gamepad support
+		s_agentMenuOpen = JTRUE;
+		
 		if (!s_loaded)
 		{
 			menu_init();
@@ -166,7 +174,15 @@ namespace TFE_DarkForces
 		}
 
 		*levelIndex = s_selectedMission + 1;
-		return ~s_missionBegin;
+		JBool menuStillRunning = ~s_missionBegin;
+		
+		// TFE: Mark menu as closed when it's about to return false (menu closing)
+		if (!menuStillRunning)
+		{
+			s_agentMenuOpen = JFALSE;
+		}
+		
+		return menuStillRunning;
 	}
 	
 	///////////////////////////////////////////
@@ -1094,5 +1110,11 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+	}
+
+	// TFE: Function to check if agent menu is open for gamepad cursor support
+	JBool agentMenu_isOpen()
+	{
+		return s_agentMenuOpen;
 	}
 }
