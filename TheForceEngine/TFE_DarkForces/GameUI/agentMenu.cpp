@@ -869,7 +869,8 @@ namespace TFE_DarkForces
 
 		// Handle analog stick with repeat timing
 		static u64 lastDialogNavigationTime = 0;
-		u64 currentTime = (u64)(TFE_System::getTime() * 1000.0);
+		u64 currentTime = TFE_System::getCurrentTimeInTicks();
+		u64 currentTimeMs = (u64)TFE_System::convertFromTicksToMillis(currentTime);
 		const u64 DIALOG_REPEAT_DELAY = 150; // Shorter delay for dialog navigation
 
 		f32 leftX = TFE_Input::getAxis(AXIS_LEFT_X);
@@ -877,17 +878,17 @@ namespace TFE_DarkForces
 		
 		if (magnitude > 0.1f) // GAMEPAD_DEADZONE
 		{
-			if (currentTime - lastDialogNavigationTime > DIALOG_REPEAT_DELAY)
+			if (currentTimeMs - lastDialogNavigationTime > DIALOG_REPEAT_DELAY)
 			{
 				if (leftX > 0.7f) // Right
 				{
 					s_gamepadDialogFocus = NEW_AGENT_YES;
-					lastDialogNavigationTime = currentTime;
+					lastDialogNavigationTime = currentTimeMs;
 				}
 				else if (leftX < -0.7f) // Left
 				{
 					s_gamepadDialogFocus = NEW_AGENT_NO;
-					lastDialogNavigationTime = currentTime;
+					lastDialogNavigationTime = currentTimeMs;
 				}
 			}
 		}
@@ -948,7 +949,8 @@ namespace TFE_DarkForces
 		static bool lastDpadPressed[4] = {false}; // Up, Down, Left, Right
 		static bool lastStickMoved = false;
 		
-		u64 currentTime = (u64)(TFE_System::getTime() * 1000.0); // Convert to milliseconds
+		u64 currentTime = TFE_System::getCurrentTimeInTicks();
+		u64 currentTimeMs = (u64)TFE_System::convertFromTicksToMillis(currentTime);
 		const u64 INITIAL_REPEAT_DELAY = 300;  // Initial delay before repeat starts
 		const u64 REPEAT_RATE = 100;           // Repeat rate after initial delay
 		
@@ -990,13 +992,13 @@ namespace TFE_DarkForces
 			{
 				// First press
 				shouldNavigate = true;
-				lastNavigationTime = currentTime;
+				lastNavigationTime = currentTimeMs;
 			}
-			else if (currentTime - lastNavigationTime > INITIAL_REPEAT_DELAY)
+			else if (currentTimeMs - lastNavigationTime > INITIAL_REPEAT_DELAY)
 			{
 				// Repeating - check repeat rate
 				static u64 lastRepeatTime = 0;
-				if (currentTime - lastRepeatTime > REPEAT_RATE)
+				if (currentTimeMs - lastRepeatTime > REPEAT_RATE)
 				{
 					shouldNavigate = true;
 					lastRepeatTime = currentTime;
