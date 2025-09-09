@@ -559,9 +559,16 @@ namespace TFE_Input
 		f32 leftX = getAxis(AXIS_LEFT_X);
 		f32 leftY = getAxis(AXIS_LEFT_Y);
 
-		// Debug: Log stick input when non-zero
+		// Debug: Log stick input when significant change occurs (reduce log spam)
 		static f32 lastLeftX = 0.0f, lastLeftY = 0.0f;
-		if (fabsf(leftX - lastLeftX) > 0.01f || fabsf(leftY - lastLeftY) > 0.01f)
+		static u32 frameCount = 0;
+		frameCount++;
+		
+		// Log stick values every 60 frames OR when significant change occurs
+		bool shouldLog = (frameCount % 60 == 0 && (fabsf(leftX) > 0.01f || fabsf(leftY) > 0.01f)) ||
+						 (fabsf(leftX - lastLeftX) > 0.15f || fabsf(leftY - lastLeftY) > 0.15f);
+		
+		if (shouldLog)
 		{
 			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Left stick: X=%.3f, Y=%.3f", leftX, leftY);
 			lastLeftX = leftX;
@@ -575,7 +582,11 @@ namespace TFE_Input
 			return; // No movement within deadzone
 		}
 
-		TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Stick movement detected - magnitude: %.3f", magnitude);
+		// Log movement detection less frequently
+		if (shouldLog)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Stick movement detected - magnitude: %.3f", magnitude);
+		}
 
 		// Normalize and remove deadzone
 		leftX = leftX / magnitude;
@@ -590,7 +601,11 @@ namespace TFE_Input
 		s32 deltaX = (s32)(leftX * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
 		s32 deltaY = (s32)(leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
 
-		TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
+		// Log movement generation less frequently
+		if (shouldLog)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
+		}
 
 		// Generate synthetic relative mouse movement
 		if (deltaX != 0 || deltaY != 0)
@@ -601,11 +616,12 @@ namespace TFE_Input
 
 	void handleGamepadMenuInput()
 	{
-		// Debug: Log button states
+		// Debug: Log button states (reduce verbosity)
 		bool aButtonPressed = buttonPressed(CONTROLLER_BUTTON_A);
 		bool aButtonDown = buttonDown(CONTROLLER_BUTTON_A);
 		static bool lastAButtonDown = false;
 		
+		// Only log when button state actually changes
 		if (aButtonDown != lastAButtonDown)
 		{
 			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button state changed: pressed=%s, down=%s", 
