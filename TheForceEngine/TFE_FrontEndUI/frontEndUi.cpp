@@ -31,6 +31,7 @@
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/GameUI/agentMenu.h>
+#include <TFE_DarkForces/GameUI/missionBriefing.h>
 #include <TFE_System/utf8.h>
 #include <TFE_ExternalData/dfLogics.h>
 #include <TFE_ExternalData/weaponExternal.h>
@@ -4115,7 +4116,8 @@ namespace TFE_FrontEndUI
 			// Check if we're in any Dark Forces in-game menu
 			inGameMenu = TFE_DarkForces::escapeMenu_isOpen() || 
 			             TFE_DarkForces::pda_isOpen() ||
-			             TFE_DarkForces::agentMenu_isOpen();  // TFE: Add agent menu support for gamepad
+			             TFE_DarkForces::agentMenu_isOpen() ||  // TFE: Add agent menu support for gamepad
+			             TFE_DarkForces::missionBriefing_isOpen();  // TFE: Add mission briefing support for gamepad
 		}
 		
 		return inFrontEndMenu || inGameMenu;

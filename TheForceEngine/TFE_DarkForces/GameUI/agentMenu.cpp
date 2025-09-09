@@ -82,16 +82,7 @@ namespace TFE_DarkForces
 	static char s_newAgentName[32];
 	static LangHotkeys* s_langKeys;
 
-	// TFE: Gamepad navigation state (matching PR #1 commit 508f2007fb63 implementation)
-	enum GamepadFocusArea
-	{
-		FOCUS_AGENT_LIST = 0,
-		FOCUS_MISSION_LIST,
-		FOCUS_BUTTONS,
-		FOCUS_AREA_COUNT
-	};
-	static GamepadFocusArea s_gamepadFocusArea = FOCUS_AGENT_LIST;
-	static s32 s_gamepadButtonFocus = AGENT_NEW;  // Which button is focused when in FOCUS_BUTTONS area
+	// TFE: Simple state tracking for gamepad cursor support (no button highlighting)
 	static s32 s_gamepadDialogFocus = NEW_AGENT_NO; // Which dialog button is focused
 
 	///////////////////////////////////////////
@@ -110,8 +101,7 @@ namespace TFE_DarkForces
 	void updateRemoveAgentDlg();
 	JBool updateQuitConfirmDlg();
 
-	// TFE: Gamepad navigation functions (referencing commit 508f2007fb63 for parity)
-	void handleGamepadNavigation();
+	// TFE: Gamepad dialog navigation functions (referencing commit 508f2007fb63 for parity)
 	void handleGamepadDialogNavigation();
 	
 	// TFE: Function to check if agent menu is open for gamepad support
@@ -129,8 +119,6 @@ namespace TFE_DarkForces
 		s_framebuffer = nullptr;
 		
 		// TFE: Reset gamepad navigation state (referencing commit 508f2007fb63)
-		s_gamepadFocusArea = FOCUS_AGENT_LIST;
-		s_gamepadButtonFocus = AGENT_NEW;
 		s_gamepadDialogFocus = NEW_AGENT_NO;
 		s_agentMenuOpen = JFALSE;  // TFE: Reset menu open state
 		
@@ -284,9 +272,6 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			// TFE: Handle gamepad navigation (referencing commit 508f2007fb63 for behavioral parity)
-			handleGamepadNavigation();
-
 			if (TFE_Input::keyPressed(KEY_N))
 			{
 				s_buttonPressed = AGENT_NEW;
@@ -409,9 +394,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				// TFE: Add gamepad focus highlighting (referencing commit 508f2007fb63 for visual consistency)
-				bool isGamepadFocused = (s_gamepadFocusArea == FOCUS_BUTTONS && s_gamepadButtonFocus == i);
-				if ((s_buttonPressed == i && s_buttonHover) || isGamepadFocused) { index = i * 2 + 1; }
+				if (s_buttonPressed == i && s_buttonHover) { index = i * 2 + 1; }
 				else { index = i * 2 + 2; }
 			}
 			blitDeltaFrame(&s_agentMenuFrames[index], 0, 0, s_framebuffer);
@@ -625,15 +608,11 @@ namespace TFE_DarkForces
 	// UI routines.
 	void drawYesNoButtons(u32 indexNo, u32 indexYes)
 	{
-		// TFE: Add gamepad focus highlighting for dialog buttons (referencing commit 508f2007fb63)
-		bool isNoFocused = (s_gamepadDialogFocus == NEW_AGENT_NO);
-		bool isYesFocused = (s_gamepadDialogFocus == NEW_AGENT_YES);
-		
-		if ((s_buttonPressed == 0 && s_buttonHover) || isNoFocused)
+		if (s_buttonPressed == 0 && s_buttonHover)
 		{
 			blitDeltaFrame(&s_agentDlgFrames[indexNo], 0, 0, s_framebuffer);
 		}
-		else if ((s_buttonPressed == 1 && s_buttonHover) || isYesFocused)
+		else if (s_buttonPressed == 1 && s_buttonHover)
 		{
 			blitDeltaFrame(&s_agentDlgFrames[indexYes], 0, 0, s_framebuffer);
 		}
@@ -859,7 +838,7 @@ namespace TFE_DarkForces
 			return;
 		}
 
-		// Handle A button (confirm)
+		// Handle A button (confirm) - activate current focused option (Yes by default)
 		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_A))
 		{
 			s_buttonPressed = s_gamepadDialogFocus;
@@ -873,7 +852,7 @@ namespace TFE_DarkForces
 			s_buttonHover = true;
 		}
 
-		// Handle left/right navigation between Yes/No buttons
+		// Handle left/right navigation between Yes/No buttons (no visual highlighting, just for A button targeting)
 		if (TFE_Input::bufferedKeyDown(KEY_LEFT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_LEFT))
 		{
 			s_gamepadDialogFocus = NEW_AGENT_NO;
@@ -881,234 +860,6 @@ namespace TFE_DarkForces
 		else if (TFE_Input::bufferedKeyDown(KEY_RIGHT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_RIGHT))
 		{
 			s_gamepadDialogFocus = NEW_AGENT_YES;
-		}
-
-		// Handle analog stick with repeat timing
-		static u64 lastDialogNavigationTime = 0;
-		u64 currentTime = TFE_System::getCurrentTimeInTicks();
-		u64 currentTimeMs = (u64)TFE_System::convertFromTicksToMillis(currentTime);
-		const u64 DIALOG_REPEAT_DELAY = 150; // Shorter delay for dialog navigation
-
-		f32 leftX = TFE_Input::getAxis(AXIS_LEFT_X);
-		f32 magnitude = fabsf(leftX);
-		
-		if (magnitude > 0.1f) // GAMEPAD_DEADZONE
-		{
-			if (currentTimeMs - lastDialogNavigationTime > DIALOG_REPEAT_DELAY)
-			{
-				if (leftX > 0.7f) // Right
-				{
-					s_gamepadDialogFocus = NEW_AGENT_YES;
-					lastDialogNavigationTime = currentTimeMs;
-				}
-				else if (leftX < -0.7f) // Left
-				{
-					s_gamepadDialogFocus = NEW_AGENT_NO;
-					lastDialogNavigationTime = currentTimeMs;
-				}
-			}
-		}
-	}
-
-	// TFE: Gamepad navigation implementation (referencing commit 508f2007fb63 for consistent behavior)
-	void handleGamepadNavigation()
-	{
-		// Only process gamepad navigation when in menu context and no dialogs are open
-		if (!TFE_FrontEndUI::isInMenuContext() || s_newAgentDlg || s_removeAgentDlg || s_quitConfirmDlg)
-		{
-			return;
-		}
-
-		// Handle A button (confirm) - single press only, no repeat
-		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_A))
-		{
-			if (s_gamepadFocusArea == FOCUS_BUTTONS)
-			{
-				s_buttonPressed = s_gamepadButtonFocus;
-				s_buttonHover = JTRUE;
-			}
-			else if (s_gamepadFocusArea == FOCUS_AGENT_LIST && s_agentCount > 0)
-			{
-				// Select current agent, switch to mission list
-				s_lastSelectedAgent = false;
-				s_gamepadFocusArea = FOCUS_MISSION_LIST;
-			}
-			else if (s_gamepadFocusArea == FOCUS_MISSION_LIST && s_agentId >= 0)
-			{
-				// Mission selected, activate BEGIN button
-				s_buttonPressed = AGENT_BEGIN;
-				s_buttonHover = JTRUE;
-			}
-		}
-
-		// Handle B button (cancel/back) - single press only, no repeat
-		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_B))
-		{
-			if (s_gamepadFocusArea == FOCUS_MISSION_LIST)
-			{
-				// Go back to agent list
-				s_lastSelectedAgent = true;
-				s_gamepadFocusArea = FOCUS_AGENT_LIST;
-			}
-			else if (s_gamepadFocusArea == FOCUS_BUTTONS)
-			{
-				// Go back to agent list
-				s_lastSelectedAgent = true;
-				s_gamepadFocusArea = FOCUS_AGENT_LIST;
-			}
-			// If already in agent list, could trigger exit (like escape menu behavior)
-		}
-
-		// Handle navigation with repeat timing for both D-pad and analog stick
-		// This provides consistent behavior matching the existing keyboard navigation
-		static u64 lastNavigationTime = 0;
-		static bool lastDpadPressed[4] = {false}; // Up, Down, Left, Right
-		static bool lastStickMoved = false;
-		
-		u64 currentTime = TFE_System::getCurrentTimeInTicks();
-		u64 currentTimeMs = (u64)TFE_System::convertFromTicksToMillis(currentTime);
-		const u64 INITIAL_REPEAT_DELAY = 300;  // Initial delay before repeat starts
-		const u64 REPEAT_RATE = 100;           // Repeat rate after initial delay
-		
-		// Check D-pad inputs
-		bool dpadUp = TFE_Input::buttonDown(CONTROLLER_BUTTON_DPAD_UP);
-		bool dpadDown = TFE_Input::buttonDown(CONTROLLER_BUTTON_DPAD_DOWN);
-		bool dpadLeft = TFE_Input::buttonDown(CONTROLLER_BUTTON_DPAD_LEFT);
-		bool dpadRight = TFE_Input::buttonDown(CONTROLLER_BUTTON_DPAD_RIGHT);
-		
-		// Check analog stick (using same deadzone as cursor movement)
-		f32 leftX = TFE_Input::getAxis(AXIS_LEFT_X);
-		f32 leftY = TFE_Input::getAxis(AXIS_LEFT_Y);
-		f32 magnitude = sqrtf(leftX * leftX + leftY * leftY);
-		
-		bool stickUp = false, stickDown = false, stickLeft = false, stickRight = false;
-		if (magnitude > 0.1f) // GAMEPAD_DEADZONE
-		{
-			leftX /= magnitude;
-			leftY /= magnitude;
-			
-			stickUp = (leftY < -0.7f);
-			stickDown = (leftY > 0.7f);
-			stickLeft = (leftX < -0.7f);
-			stickRight = (leftX > 0.7f);
-		}
-		
-		// Combine D-pad and stick inputs (avoid double triggering)
-		bool inputUp = dpadUp || stickUp;
-		bool inputDown = dpadDown || stickDown;
-		bool inputLeft = dpadLeft || stickLeft;
-		bool inputRight = dpadRight || stickRight;
-		bool anyInput = inputUp || inputDown || inputLeft || inputRight;
-		
-		// Handle repeat timing
-		bool shouldNavigate = false;
-		if (anyInput)
-		{
-			if (!lastDpadPressed[0] && !lastDpadPressed[1] && !lastDpadPressed[2] && !lastDpadPressed[3] && !lastStickMoved)
-			{
-				// First press
-				shouldNavigate = true;
-				lastNavigationTime = currentTimeMs;
-			}
-			else if (currentTimeMs - lastNavigationTime > INITIAL_REPEAT_DELAY)
-			{
-				// Repeating - check repeat rate
-				static u64 lastRepeatTime = 0;
-				if (currentTimeMs - lastRepeatTime > REPEAT_RATE)
-				{
-					shouldNavigate = true;
-					lastRepeatTime = currentTime;
-				}
-			}
-		}
-		
-		// Store current input state for next frame
-		lastDpadPressed[0] = inputUp;
-		lastDpadPressed[1] = inputDown; 
-		lastDpadPressed[2] = inputLeft;
-		lastDpadPressed[3] = inputRight;
-		lastStickMoved = anyInput;
-		
-		// Execute navigation if timing allows
-		if (shouldNavigate)
-		{
-			// Vertical navigation (Up/Down)
-			if (inputDown)
-			{
-				if (s_gamepadFocusArea == FOCUS_AGENT_LIST && s_agentCount > 0)
-				{
-					s_agentId++;
-					if (s_agentId >= (s32)s_agentCount) { s_agentId = 0; }
-					if (s_agentId >= 0) { s_selectedMission = max(0, s_agentData[s_agentId].selectedMission - 1); }
-					s_lastSelectedAgent = true;
-				}
-				else if (s_gamepadFocusArea == FOCUS_MISSION_LIST && s_agentId >= 0 && s_agentData[s_agentId].nextMission > 1)
-				{
-					s_selectedMission++;
-					if (s_selectedMission > s_agentData[s_agentId].nextMission - 1 || s_selectedMission == 14) { s_selectedMission = 0; }
-					s_lastSelectedAgent = false;
-				}
-				else if (s_gamepadFocusArea == FOCUS_BUTTONS)
-				{
-					s_gamepadButtonFocus++;
-					if (s_gamepadButtonFocus >= AGENT_COUNT) { s_gamepadButtonFocus = 0; }
-				}
-			}
-			else if (inputUp)
-			{
-				if (s_gamepadFocusArea == FOCUS_AGENT_LIST && s_agentCount > 0)
-				{
-					s_agentId--;
-					if (s_agentId < 0) { s_agentId = s_agentCount - 1; }
-					if (s_agentId >= 0) { s_selectedMission = max(0, s_agentData[s_agentId].selectedMission - 1); }
-					s_lastSelectedAgent = true;
-				}
-				else if (s_gamepadFocusArea == FOCUS_MISSION_LIST && s_agentId >= 0 && s_agentData[s_agentId].nextMission > 1)
-				{
-					s_selectedMission--;
-					if (s_selectedMission < 0) { s_selectedMission = s_agentData[s_agentId].nextMission - 1; }
-					s_lastSelectedAgent = false;
-				}
-				else if (s_gamepadFocusArea == FOCUS_BUTTONS)
-				{
-					s_gamepadButtonFocus--;
-					if (s_gamepadButtonFocus < 0) { s_gamepadButtonFocus = AGENT_COUNT - 1; }
-				}
-			}
-
-			// Horizontal navigation (Left/Right) - area switching
-			if (inputRight)
-			{
-				if (s_gamepadFocusArea == FOCUS_AGENT_LIST)
-				{
-					if (s_agentCount > 0 && s_agentId >= 0 && s_agentData[s_agentId].nextMission > 1)
-					{
-						s_gamepadFocusArea = FOCUS_MISSION_LIST;
-						s_lastSelectedAgent = false;
-					}
-					else
-					{
-						s_gamepadFocusArea = FOCUS_BUTTONS;
-					}
-				}
-				else if (s_gamepadFocusArea == FOCUS_MISSION_LIST)
-				{
-					s_gamepadFocusArea = FOCUS_BUTTONS;
-				}
-			}
-			else if (inputLeft)
-			{
-				if (s_gamepadFocusArea == FOCUS_MISSION_LIST)
-				{
-					s_gamepadFocusArea = FOCUS_AGENT_LIST;
-					s_lastSelectedAgent = true;
-				}
-				else if (s_gamepadFocusArea == FOCUS_BUTTONS)
-				{
-					s_gamepadFocusArea = (s_agentCount > 0) ? FOCUS_AGENT_LIST : FOCUS_AGENT_LIST;
-					s_lastSelectedAgent = true;
-				}
-			}
 		}
 	}
 
