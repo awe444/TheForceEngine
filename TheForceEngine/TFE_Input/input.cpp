@@ -574,8 +574,6 @@ namespace TFE_Input
 
 		// Debug: Log stick input when significant change occurs (reduce log spam)
 		static f32 lastLeftX = 0.0f, lastLeftY = 0.0f;
-		static u32 frameCount = 0;
-		frameCount++;
 		
 		// Log stick values every 60 frames OR when significant change occurs
 		bool shouldLog = (frameCount % 60 == 0 && (fabsf(leftX) > 0.01f || fabsf(leftY) > 0.01f)) ||
