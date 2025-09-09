@@ -2,9 +2,14 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
+#include <SDL.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 namespace TFE_Input
 {
@@ -527,5 +532,169 @@ namespace TFE_Input
 	const char* getKeyboardModifierName(KeyModifier mod)
 	{
 		return c_keyModNames[mod];
+	}
+
+	// TFE: Gamepad cursor movement for menu navigation
+	// Constants for gamepad cursor movement
+	static const f32 GAMEPAD_CURSOR_SPEED = 400.0f;  // Base cursor speed (pixels per second)
+	static const f32 GAMEPAD_DEADZONE = 0.1f;        // 10% deadzone as specified
+	static const f32 GAMEPAD_ACCEL_POWER = 1.25f;    // Acceleration power for finer control
+	static bool s_gamepadMouseButtonDown = false;     // Track if A button is simulating mouse button
+
+	void updateGamepadCursor()
+	{
+		// Debug: Log that function is being called (throttled)
+		static u32 frameCount = 0;
+		frameCount++;
+		if (frameCount % 300 == 1) // Log every 5 seconds at 60fps
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "updateGamepadCursor() called - frame %u", frameCount);
+		}
+		
+		// Debug: Always log menu context state and app state
+		bool inMenuContext = TFE_FrontEndUI::isInMenuContext();
+		static bool lastMenuContext = false;
+		static AppState lastAppState = APP_STATE_UNINIT;
+		AppState currentAppState = TFE_FrontEndUI::getAppState();
+		
+		if (inMenuContext != lastMenuContext || currentAppState != lastAppState)
+		{
+			// Log which specific menu context we're in for debugging
+			const char* menuType = "Unknown";
+			if (currentAppState == APP_STATE_MENU) menuType = "FrontEnd";
+			else if (currentAppState == APP_STATE_LOAD) menuType = "Loading";
+			else if (currentAppState == APP_STATE_EXIT_TO_MENU) menuType = "ExitToMenu";
+			else if (currentAppState == APP_STATE_SET_DEFAULTS) menuType = "SetDefaults";
+			else if (currentAppState == APP_STATE_GAME) {
+				if (TFE_DarkForces::escapeMenu_isOpen()) menuType = "EscapeMenu";
+				else if (TFE_DarkForces::pda_isOpen()) menuType = "PDA";
+				else menuType = "Game";
+			}
+			
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context: %s, App state: %d (%s)", 
+				inMenuContext ? "TRUE" : "FALSE", (int)currentAppState, menuType);
+			lastMenuContext = inMenuContext;
+			lastAppState = currentAppState;
+		}
+
+		// Only process gamepad cursor movement when in menu context
+		if (!inMenuContext)
+		{
+			return;
+		}
+
+		// Get left stick axes
+		f32 leftX = getAxis(AXIS_LEFT_X);
+		f32 leftY = getAxis(AXIS_LEFT_Y);
+
+		// Debug: Log stick input when significant change occurs (reduce log spam)
+		static f32 lastLeftX = 0.0f, lastLeftY = 0.0f;
+		
+		// Log stick values every 60 frames OR when significant change occurs
+		bool shouldLog = (frameCount % 60 == 0 && (fabsf(leftX) > 0.01f || fabsf(leftY) > 0.01f)) ||
+						 (fabsf(leftX - lastLeftX) > 0.15f || fabsf(leftY - lastLeftY) > 0.15f);
+		
+		if (shouldLog)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Left stick: X=%.3f, Y=%.3f", leftX, leftY);
+			lastLeftX = leftX;
+			lastLeftY = leftY;
+		}
+
+		// Apply deadzone
+		f32 magnitude = sqrtf(leftX * leftX + leftY * leftY);
+		if (magnitude < GAMEPAD_DEADZONE)
+		{
+			return; // No movement within deadzone
+		}
+
+		// Log movement detection less frequently
+		if (shouldLog)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Stick movement detected - magnitude: %.3f", magnitude);
+		}
+
+		// Normalize and remove deadzone
+		leftX = leftX / magnitude;
+		leftY = leftY / magnitude;
+		f32 normalizedMagnitude = (magnitude - GAMEPAD_DEADZONE) / (1.0f - GAMEPAD_DEADZONE);
+
+		// Apply acceleration curve for finer control at low speeds, faster at high speeds
+		f32 acceleratedMagnitude = powf(normalizedMagnitude, GAMEPAD_ACCEL_POWER);
+
+		// Calculate cursor delta (assume 60 fps for frame delta)
+		f32 frameTime = 1.0f / 60.0f; // TODO: Use actual frame time if available
+		s32 deltaX = (s32)(leftX * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
+		s32 deltaY = (s32)(leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
+
+		// Log movement generation less frequently
+		if (shouldLog)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
+		}
+
+		// Update internal mouse position for game's cursor system
+		if (deltaX != 0 || deltaY != 0)
+		{
+			// Get current mouse position from internal state
+			s32 currentX, currentY;
+			getMousePos(&currentX, &currentY);
+			
+			// Calculate new position
+			s32 newX = currentX + deltaX;
+			s32 newY = currentY + deltaY;
+			
+			// Update internal mouse position - this will be used by menu_handleMousePosition()
+			setMousePos(newX, newY);
+			
+			if (shouldLog)
+			{
+				TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Updated internal mouse position: (%d,%d) -> (%d,%d)", 
+					currentX, currentY, newX, newY);
+			}
+		}
+	}
+
+	void handleGamepadMenuInput()
+	{
+		// Debug: Log button states (reduce verbosity)
+		bool aButtonPressed = buttonPressed(CONTROLLER_BUTTON_A);
+		bool aButtonDown = buttonDown(CONTROLLER_BUTTON_A);
+		static bool lastAButtonDown = false;
+		
+		// Only log when button state actually changes
+		if (aButtonDown != lastAButtonDown)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button state changed: pressed=%s, down=%s", 
+				aButtonPressed ? "TRUE" : "FALSE", aButtonDown ? "TRUE" : "FALSE");
+			lastAButtonDown = aButtonDown;
+		}
+
+		// Only process gamepad menu input when in menu context
+		if (!TFE_FrontEndUI::isInMenuContext())
+		{
+			// Reset gamepad mouse state when leaving menu context
+			if (s_gamepadMouseButtonDown)
+			{
+				TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "Leaving menu context - releasing mouse button");
+				setMouseButtonUp(MBUTTON_LEFT);
+				s_gamepadMouseButtonDown = false;
+			}
+			return;
+		}
+
+		// Handle A button as left mouse click for menu interaction
+		if (aButtonPressed && !s_gamepadMouseButtonDown)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button pressed - simulating mouse down");
+			setMouseButtonDown(MBUTTON_LEFT);
+			s_gamepadMouseButtonDown = true;
+		}
+		else if (!aButtonDown && s_gamepadMouseButtonDown)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button released - simulating mouse up");
+			setMouseButtonUp(MBUTTON_LEFT);
+			s_gamepadMouseButtonDown = false;
+		}
 	}
 }

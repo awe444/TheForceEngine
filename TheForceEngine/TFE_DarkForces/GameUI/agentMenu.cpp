@@ -298,7 +298,9 @@ namespace TFE_DarkForces
 					{
 						s_newAgentDlg = JTRUE;
 						memset(s_newAgentName, 0, 32);
-						s_editBox.cursor = 0;
+						// TFE: Prepopulate new agent profile name with "Player 1" for gamepad quality-of-life
+						strcpy(s_newAgentName, "Player 1");
+						s_editBox.cursor = strlen(s_newAgentName);
 						s_editBox.inputField = s_newAgentName;
 						s_editBox.maxLen = 16;
 					} break;

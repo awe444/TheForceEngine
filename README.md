@@ -27,7 +27,7 @@ On this system it is recommended to run “The Force Engine” in desktop mode
 * High resolution and widescreen support — when using 320×200 you get the original software renderer. TFE also includes a floating‑point software renderer which supports widescreen, including ultrawide, and much higher resolutions.
 * GPU renderer with perspective correct pitch — play at much higher resolutions with improved performance.
 * Extended Limits — TFE, by default, will support much higher limits than the original game’s “Jedi Engine” was capable of, which removes most of the HOM (Hall of Mirrors) issues in advanced mods.
-* Full input binding, mouse sensitivity adjustment, and controller support. Note however that menus currently **require a pointing input device, like a mouse or touchscreen**.
+* Full input binding, mouse sensitivity adjustment, and controller support. Gamepad users can now navigate menus using the left analog stick for cursor movement and the A button for selection, press Select to open the pause menu during gameplay, and skip cutscenes with the A button.
 * Optional quality‑of‑life improvements, such as full mouselook, aiming reticle, improved Boba Fett AI, autorun, and more.
 * A new save system that works seamlessly with the exiting checkpoint and lives system. You can ignore it entirely, use it just as an exit save so you don’t have to play long user levels in one sitting, or full save and load with quicksaves like “Doom” or “Duke Nukem 3D”.
 * Sound Font (sf2) and OPL3 emulation support.

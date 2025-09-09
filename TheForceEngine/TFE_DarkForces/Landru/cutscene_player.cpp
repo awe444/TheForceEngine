@@ -210,8 +210,9 @@ namespace TFE_DarkForces
 
 		// TFE: Added since inputs can be skipped at low framerates.
 		// Ignore Enter key if player is pressing Alt-Enter (to switch between windowed and fullscreen)
+		// TFE: Added A button (CONTROLLER_BUTTON_A) for gamepad cutscene skipping
 		if (TFE_Input::keyPressed(KEY_ESCAPE) || (TFE_Input::keyPressed(KEY_RETURN) && !TFE_Input::keyDown(KEY_LALT) 
-			&& !TFE_Input::keyDown(KEY_RALT)))
+			&& !TFE_Input::keyDown(KEY_RALT)) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_A))
 		{
 			s_skipSceneInput = JTRUE;
 		}

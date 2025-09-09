@@ -82,4 +82,8 @@ namespace TFE_Input
 	const char* getMouseWheelName(MouseWheel axis);
 	const char* getKeyboardName(KeyboardCode key);
 	const char* getKeyboardModifierName(KeyModifier mod);
+
+	// TFE: Gamepad cursor movement for menu navigation
+	void updateGamepadCursor();
+	void handleGamepadMenuInput();
 };

@@ -77,4 +77,8 @@ namespace TFE_FrontEndUI
 	void drawFps(s32 windowWidth);
 
 	bool isModUI();
+	
+	// TFE: Gamepad navigation support functions
+	AppState getAppState();
+	bool isInMenuContext();
 }

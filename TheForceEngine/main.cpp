@@ -162,6 +162,24 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_CONTROLLERAXISMOTION:
 		{
+			// Debug: Log left stick movement only when significant change occurs (reduce log spam)
+			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX || Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+			{
+				f32 value = f32(Event.caxis.value) / 32768.0f;
+				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY) value = -value;
+				static f32 lastLoggedX = 0.0f, lastLoggedY = 0.0f;
+				
+				// Only log when change is significant (> 0.1) to reduce spam
+				if ((Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX && fabsf(value - lastLoggedX) > 0.1f) ||
+					(Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY && fabsf(value - lastLoggedY) > 0.1f))
+				{
+					TFE_System::logWrite(LOG_MSG, "SDL_Input", "Left stick %s: %f (raw: %d)", 
+						Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ? "X" : "Y", value, Event.caxis.value);
+					if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX) lastLoggedX = value;
+					if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY) lastLoggedY = value;
+				}
+			}
+
 			// Axis are now handled interally so the deadzone can be changed.
 			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
 			{ TFE_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
@@ -193,6 +211,11 @@ void handleEvent(SDL_Event& Event)
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
+				// Debug: Log A button presses specifically
+				if (Event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+				{
+					TFE_System::logWrite(LOG_MSG, "SDL_Input", "A button pressed (SDL button %d)", Event.cbutton.button);
+				}
 				TFE_Input::setButtonDown(Button(Event.cbutton.button));
 			}
 		} break;
@@ -200,6 +223,11 @@ void handleEvent(SDL_Event& Event)
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
+				// Debug: Log A button releases specifically
+				if (Event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+				{
+					TFE_System::logWrite(LOG_MSG, "SDL_Input", "A button released (SDL button %d)", Event.cbutton.button);
+				}
 				TFE_Input::setButtonUp(Button(Event.cbutton.button));
 			}
 		} break;
@@ -690,6 +718,10 @@ int main(int argc, char* argv[])
 		// System events
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
+
+		// TFE: Process gamepad cursor movement and menu input for gamepad-only navigation
+		TFE_Input::updateGamepadCursor();
+		TFE_Input::handleGamepadMenuInput();
 
 		// Inputs Main Entry - skip frame any further processing during replay pause
 		if (!inputMapping_handleInputs())
