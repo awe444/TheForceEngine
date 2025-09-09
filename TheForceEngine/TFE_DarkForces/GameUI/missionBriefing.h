@@ -20,4 +20,7 @@ namespace TFE_DarkForces
 	void  missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill, LangHotkeys* langKeys);
 	void  missionBriefing_cleanup();
 	JBool missionBriefing_update(s32* skill, JBool* abort);
+	
+	// TFE: Function to check if mission briefing is open for gamepad cursor support
+	JBool missionBriefing_isOpen();
 }

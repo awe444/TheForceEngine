@@ -536,7 +536,7 @@ namespace TFE_Input
 
 	// TFE: Gamepad cursor movement for menu navigation
 	// Constants for gamepad cursor movement
-	static const f32 GAMEPAD_CURSOR_SPEED = 400.0f;  // Base cursor speed (pixels per second)
+	static const f32 GAMEPAD_CURSOR_SPEED = 800.0f;  // Base cursor speed (pixels per second) - 2x sensitivity
 	static const f32 GAMEPAD_DEADZONE = 0.1f;        // 10% deadzone as specified
 	static const f32 GAMEPAD_ACCEL_POWER = 1.25f;    // Acceleration power for finer control
 	static bool s_gamepadMouseButtonDown = false;     // Track if A button is simulating mouse button
@@ -625,7 +625,7 @@ namespace TFE_Input
 		// Calculate cursor delta (assume 60 fps for frame delta)
 		f32 frameTime = 1.0f / 60.0f; // TODO: Use actual frame time if available
 		s32 deltaX = (s32)(leftX * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
-		s32 deltaY = (s32)(leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
+		s32 deltaY = (s32)(-leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime); // Inverted Y-axis
 
 		// Log movement generation less frequently
 		if (shouldLog)

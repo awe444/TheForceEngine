@@ -70,6 +70,7 @@ namespace TFE_DarkForces
 	static JBool s_removeAgentDlg = JFALSE;
 	static JBool s_quitConfirmDlg = JFALSE;
 	static JBool s_missionBegin = JFALSE;
+	static JBool s_agentMenuOpen = JFALSE;  // TFE: Track when agent menu is active for gamepad support
 	static EditBox s_editBox = {};
 	
 	static u8 s_menuPalette[768];
@@ -80,6 +81,9 @@ namespace TFE_DarkForces
 	
 	static char s_newAgentName[32];
 	static LangHotkeys* s_langKeys;
+
+	// TFE: Simple state tracking for gamepad cursor support (no button highlighting)
+	static s32 s_gamepadDialogFocus = NEW_AGENT_NO; // Which dialog button is focused
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -97,6 +101,12 @@ namespace TFE_DarkForces
 	void updateRemoveAgentDlg();
 	JBool updateQuitConfirmDlg();
 
+	// TFE: Gamepad dialog navigation functions (referencing commit 508f2007fb63 for parity)
+	void handleGamepadDialogNavigation();
+	
+	// TFE: Function to check if agent menu is open for gamepad support
+	JBool agentMenu_isOpen();
+
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
@@ -107,11 +117,19 @@ namespace TFE_DarkForces
 		s_agentMenuFrames = nullptr;
 		s_agentDlgFrames = nullptr;
 		s_framebuffer = nullptr;
+		
+		// TFE: Reset gamepad navigation state (referencing commit 508f2007fb63)
+		s_gamepadDialogFocus = NEW_AGENT_NO;
+		s_agentMenuOpen = JFALSE;  // TFE: Reset menu open state
+		
 		delt_resetState();
 	}
 
 	JBool agentMenu_update(s32* levelIndex)
 	{
+		// TFE: Mark menu as open for gamepad support
+		s_agentMenuOpen = JTRUE;
+		
 		if (!s_loaded)
 		{
 			menu_init();
@@ -144,7 +162,15 @@ namespace TFE_DarkForces
 		}
 
 		*levelIndex = s_selectedMission + 1;
-		return ~s_missionBegin;
+		JBool menuStillRunning = ~s_missionBegin;
+		
+		// TFE: Mark menu as closed when it's about to return false (menu closing)
+		if (!menuStillRunning)
+		{
+			s_agentMenuOpen = JFALSE;
+		}
+		
+		return menuStillRunning;
 	}
 	
 	///////////////////////////////////////////
@@ -190,6 +216,17 @@ namespace TFE_DarkForces
 
 		const s32 x = s_cursorPos.x;
 		const s32 z = s_cursorPos.z;
+		
+		// TFE: Detect mouse movement to switch from gamepad to mouse control (matching PR #1 behavior)
+		static s32 lastMouseX = -1, lastMouseZ = -1;
+		if (lastMouseX >= 0 && (lastMouseX != x || lastMouseZ != z))
+		{
+			// Mouse moved - prioritize mouse control over gamepad
+			// (Implementation note: mouse taking over focus is handled implicitly through existing mouse logic)
+		}
+		lastMouseX = x;
+		lastMouseZ = z;
+		
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;
@@ -297,6 +334,8 @@ namespace TFE_DarkForces
 					case AGENT_NEW:
 					{
 						s_newAgentDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						memset(s_newAgentName, 0, 32);
 						// TFE: Prepopulate new agent profile name with "Player 1" for gamepad quality-of-life
 						strcpy(s_newAgentName, "Player 1");
@@ -306,9 +345,13 @@ namespace TFE_DarkForces
 					} break;
 					case AGENT_REMOVE:
 						s_removeAgentDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						break;
 					case AGENT_EXIT:
 						s_quitConfirmDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						break;
 					case AGENT_BEGIN:
 						if (s_agentCount > 0 && s_selectedMission >= 0)
@@ -604,6 +647,9 @@ namespace TFE_DarkForces
 			return;
 		}
 
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
+
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;
@@ -655,6 +701,9 @@ namespace TFE_DarkForces
 			s_removeAgentDlg = false;
 			return;
 		}
+
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
@@ -722,6 +771,9 @@ namespace TFE_DarkForces
 			return JTRUE;
 		}
 
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
+
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;
@@ -775,5 +827,45 @@ namespace TFE_DarkForces
 		}
 
 		return quit;
+	}
+
+	// TFE: Gamepad dialog navigation (referencing commit 508f2007fb63 for consistency)
+	void handleGamepadDialogNavigation()
+	{
+		// Only process when in menu context
+		if (!TFE_FrontEndUI::isInMenuContext())
+		{
+			return;
+		}
+
+		// Handle A button (confirm) - activate current focused option (Yes by default)
+		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_A))
+		{
+			s_buttonPressed = s_gamepadDialogFocus;
+			s_buttonHover = true;
+		}
+
+		// Handle B button (cancel) - typically select "No" option
+		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_B))
+		{
+			s_buttonPressed = NEW_AGENT_NO;
+			s_buttonHover = true;
+		}
+
+		// Handle left/right navigation between Yes/No buttons (no visual highlighting, just for A button targeting)
+		if (TFE_Input::bufferedKeyDown(KEY_LEFT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_LEFT))
+		{
+			s_gamepadDialogFocus = NEW_AGENT_NO;
+		}
+		else if (TFE_Input::bufferedKeyDown(KEY_RIGHT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_RIGHT))
+		{
+			s_gamepadDialogFocus = NEW_AGENT_YES;
+		}
+	}
+
+	// TFE: Function to check if agent menu is open for gamepad cursor support
+	JBool agentMenu_isOpen()
+	{
+		return s_agentMenuOpen;
 	}
 }

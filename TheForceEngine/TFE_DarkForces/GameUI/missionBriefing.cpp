@@ -432,6 +432,12 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 	
+	// TFE: Function to check if mission briefing is open for gamepad cursor support
+	JBool missionBriefing_isOpen()
+	{
+		return s_briefingOpen;
+	}
+	
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////
