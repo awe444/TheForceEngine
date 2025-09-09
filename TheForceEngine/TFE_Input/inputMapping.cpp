@@ -8,6 +8,7 @@
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/GameUI/pda.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 
 namespace TFE_Input
 {
@@ -633,7 +634,18 @@ namespace TFE_Input
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
 		SDL_GetRelativeMouseState(&mouseX, &mouseY);
-		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
+		
+		// TFE: When in menu context, preserve gamepad cursor position instead of overwriting with SDL mouse position
+		if (TFE_FrontEndUI::isInMenuContext())
+		{
+			// Use existing internal mouse position to preserve gamepad cursor updates
+			TFE_Input::getMousePos(&mouseAbsX, &mouseAbsY);
+		}
+		else
+		{
+			// Normal case: use SDL mouse position for gameplay
+			SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
+		}
 
 		// Handle Playback
 		if (isDemoPlayback())
