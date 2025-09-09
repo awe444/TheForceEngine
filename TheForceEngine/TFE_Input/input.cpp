@@ -540,13 +540,26 @@ namespace TFE_Input
 
 	void updateGamepadCursor()
 	{
-		// Debug: Always log menu context state
+		// Debug: Log that function is being called (throttled)
+		static u32 frameCount = 0;
+		frameCount++;
+		if (frameCount % 300 == 1) // Log every 5 seconds at 60fps
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "updateGamepadCursor() called - frame %u", frameCount);
+		}
+		
+		// Debug: Always log menu context state and app state
 		bool inMenuContext = TFE_FrontEndUI::isInMenuContext();
 		static bool lastMenuContext = false;
-		if (inMenuContext != lastMenuContext)
+		static AppState lastAppState = APP_STATE_UNINIT;
+		AppState currentAppState = TFE_FrontEndUI::getAppState();
+		
+		if (inMenuContext != lastMenuContext || currentAppState != lastAppState)
 		{
-			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context changed: %s", inMenuContext ? "TRUE" : "FALSE");
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context: %s, App state: %d", 
+				inMenuContext ? "TRUE" : "FALSE", (int)currentAppState);
 			lastMenuContext = inMenuContext;
+			lastAppState = currentAppState;
 		}
 
 		// Only process gamepad cursor movement when in menu context

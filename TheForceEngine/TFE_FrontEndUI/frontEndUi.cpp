@@ -4098,7 +4098,11 @@ namespace TFE_FrontEndUI
 
 	bool isInMenuContext()
 	{
-		// Return true if we're in the main menu or any sub-menu where cursor navigation is expected
-		return s_appState == APP_STATE_MENU;
+		// Return true if we're in any state where cursor navigation should work
+		// This includes main menu, loading screens, and game menus
+		return s_appState == APP_STATE_MENU || 
+		       s_appState == APP_STATE_LOAD ||
+		       s_appState == APP_STATE_EXIT_TO_MENU ||
+		       s_appState == APP_STATE_SET_DEFAULTS;
 	}
 }
