@@ -3,6 +3,8 @@
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
@@ -556,8 +558,20 @@ namespace TFE_Input
 		
 		if (inMenuContext != lastMenuContext || currentAppState != lastAppState)
 		{
-			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context: %s, App state: %d", 
-				inMenuContext ? "TRUE" : "FALSE", (int)currentAppState);
+			// Log which specific menu context we're in for debugging
+			const char* menuType = "Unknown";
+			if (currentAppState == APP_STATE_MENU) menuType = "FrontEnd";
+			else if (currentAppState == APP_STATE_LOAD) menuType = "Loading";
+			else if (currentAppState == APP_STATE_EXIT_TO_MENU) menuType = "ExitToMenu";
+			else if (currentAppState == APP_STATE_SET_DEFAULTS) menuType = "SetDefaults";
+			else if (currentAppState == APP_STATE_GAME) {
+				if (TFE_DarkForces::escapeMenu_isOpen()) menuType = "EscapeMenu";
+				else if (TFE_DarkForces::pda_isOpen()) menuType = "PDA";
+				else menuType = "Game";
+			}
+			
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context: %s, App state: %d (%s)", 
+				inMenuContext ? "TRUE" : "FALSE", (int)currentAppState, menuType);
 			lastMenuContext = inMenuContext;
 			lastAppState = currentAppState;
 		}

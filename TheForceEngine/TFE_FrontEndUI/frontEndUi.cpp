@@ -28,6 +28,8 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/tfeMessage.h>
+#include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_System/utf8.h>
 #include <TFE_ExternalData/dfLogics.h>
 #include <TFE_ExternalData/weaponExternal.h>
@@ -4100,9 +4102,20 @@ namespace TFE_FrontEndUI
 	{
 		// Return true if we're in any state where cursor navigation should work
 		// This includes main menu, loading screens, and game menus
-		return s_appState == APP_STATE_MENU || 
-		       s_appState == APP_STATE_LOAD ||
-		       s_appState == APP_STATE_EXIT_TO_MENU ||
-		       s_appState == APP_STATE_SET_DEFAULTS;
+		bool inFrontEndMenu = s_appState == APP_STATE_MENU || 
+		                      s_appState == APP_STATE_LOAD ||
+		                      s_appState == APP_STATE_EXIT_TO_MENU ||
+		                      s_appState == APP_STATE_SET_DEFAULTS;
+		
+		// Also check for in-game menu contexts where cursor should work
+		bool inGameMenu = false;
+		if (s_appState == APP_STATE_GAME)
+		{
+			// Check if we're in any Dark Forces in-game menu
+			inGameMenu = TFE_DarkForces::escapeMenu_isOpen() || 
+			             TFE_DarkForces::pda_isOpen();
+		}
+		
+		return inFrontEndMenu || inGameMenu;
 	}
 }
