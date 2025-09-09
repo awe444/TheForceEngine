@@ -5,6 +5,7 @@
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
+#include <SDL.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
@@ -632,10 +633,35 @@ namespace TFE_Input
 			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
 		}
 
-		// Generate synthetic relative mouse movement
+		// Generate synthetic SDL mouse motion events for ImGui
 		if (deltaX != 0 || deltaY != 0)
 		{
-			setRelativeMousePos(deltaX, deltaY);
+			// Get current mouse position from SDL
+			int currentX, currentY;
+			SDL_GetMouseState(&currentX, &currentY);
+			
+			// Calculate new position
+			int newX = currentX + deltaX;
+			int newY = currentY + deltaY;
+			
+			// Create and push synthetic SDL mouse motion event
+			SDL_Event syntheticEvent;
+			syntheticEvent.type = SDL_MOUSEMOTION;
+			syntheticEvent.motion.which = 0; // Mouse device ID (0 = first mouse)
+			syntheticEvent.motion.state = 0; // Button state (we don't change buttons here)
+			syntheticEvent.motion.x = newX;
+			syntheticEvent.motion.y = newY;
+			syntheticEvent.motion.xrel = deltaX;
+			syntheticEvent.motion.yrel = deltaY;
+			
+			// Push the event to SDL's event queue
+			SDL_PushEvent(&syntheticEvent);
+			
+			if (shouldLog)
+			{
+				TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Injected SDL mouse motion: (%d,%d) -> (%d,%d)", 
+					currentX, currentY, newX, newY);
+			}
 		}
 	}
 
