@@ -91,6 +91,7 @@ namespace TFE_DarkForces
 	};
 	static GamepadFocusArea s_gamepadFocusArea = FOCUS_AGENT_LIST;
 	static s32 s_gamepadButtonFocus = AGENT_NEW;  // Which button is focused when in FOCUS_BUTTONS area
+	static s32 s_gamepadDialogFocus = NEW_AGENT_NO; // Which dialog button is focused
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -110,6 +111,7 @@ namespace TFE_DarkForces
 
 	// TFE: Gamepad navigation functions (referencing commit 508f2007fb63 for parity)
 	void handleGamepadNavigation();
+	void handleGamepadDialogNavigation();
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -125,6 +127,7 @@ namespace TFE_DarkForces
 		// TFE: Reset gamepad navigation state (referencing commit 508f2007fb63)
 		s_gamepadFocusArea = FOCUS_AGENT_LIST;
 		s_gamepadButtonFocus = AGENT_NEW;
+		s_gamepadDialogFocus = NEW_AGENT_NO;
 		
 		delt_resetState();
 	}
@@ -330,6 +333,8 @@ namespace TFE_DarkForces
 					case AGENT_NEW:
 					{
 						s_newAgentDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						memset(s_newAgentName, 0, 32);
 						// TFE: Prepopulate new agent profile name with "Player 1" for gamepad quality-of-life
 						strcpy(s_newAgentName, "Player 1");
@@ -339,9 +344,13 @@ namespace TFE_DarkForces
 					} break;
 					case AGENT_REMOVE:
 						s_removeAgentDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						break;
 					case AGENT_EXIT:
 						s_quitConfirmDlg = JTRUE;
+						// TFE: Reset dialog focus for gamepad navigation
+						s_gamepadDialogFocus = NEW_AGENT_NO;
 						break;
 					case AGENT_BEGIN:
 						if (s_agentCount > 0 && s_selectedMission >= 0)
@@ -600,11 +609,15 @@ namespace TFE_DarkForces
 	// UI routines.
 	void drawYesNoButtons(u32 indexNo, u32 indexYes)
 	{
-		if (s_buttonPressed == 0 && s_buttonHover)
+		// TFE: Add gamepad focus highlighting for dialog buttons (referencing commit 508f2007fb63)
+		bool isNoFocused = (s_gamepadDialogFocus == NEW_AGENT_NO);
+		bool isYesFocused = (s_gamepadDialogFocus == NEW_AGENT_YES);
+		
+		if ((s_buttonPressed == 0 && s_buttonHover) || isNoFocused)
 		{
 			blitDeltaFrame(&s_agentDlgFrames[indexNo], 0, 0, s_framebuffer);
 		}
-		else if (s_buttonPressed == 1 && s_buttonHover)
+		else if ((s_buttonPressed == 1 && s_buttonHover) || isYesFocused)
 		{
 			blitDeltaFrame(&s_agentDlgFrames[indexYes], 0, 0, s_framebuffer);
 		}
@@ -638,6 +651,9 @@ namespace TFE_DarkForces
 			s_newAgentDlg = JFALSE;
 			return;
 		}
+
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
@@ -690,6 +706,9 @@ namespace TFE_DarkForces
 			s_removeAgentDlg = false;
 			return;
 		}
+
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
@@ -757,6 +776,9 @@ namespace TFE_DarkForces
 			return JTRUE;
 		}
 
+		// TFE: Handle gamepad navigation for dialog (referencing commit 508f2007fb63)
+		handleGamepadDialogNavigation();
+
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;
@@ -810,6 +832,65 @@ namespace TFE_DarkForces
 		}
 
 		return quit;
+	}
+
+	// TFE: Gamepad dialog navigation (referencing commit 508f2007fb63 for consistency)
+	void handleGamepadDialogNavigation()
+	{
+		// Only process when in menu context
+		if (!TFE_FrontEndUI::isInMenuContext())
+		{
+			return;
+		}
+
+		// Handle A button (confirm)
+		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_A))
+		{
+			s_buttonPressed = s_gamepadDialogFocus;
+			s_buttonHover = true;
+		}
+
+		// Handle B button (cancel) - typically select "No" option
+		if (TFE_Input::buttonPressed(CONTROLLER_BUTTON_B))
+		{
+			s_buttonPressed = NEW_AGENT_NO;
+			s_buttonHover = true;
+		}
+
+		// Handle left/right navigation between Yes/No buttons
+		if (TFE_Input::bufferedKeyDown(KEY_LEFT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_LEFT))
+		{
+			s_gamepadDialogFocus = NEW_AGENT_NO;
+		}
+		else if (TFE_Input::bufferedKeyDown(KEY_RIGHT) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_RIGHT))
+		{
+			s_gamepadDialogFocus = NEW_AGENT_YES;
+		}
+
+		// Handle analog stick with repeat timing
+		static u64 lastDialogNavigationTime = 0;
+		u64 currentTime = (u64)(TFE_System::getTime() * 1000.0);
+		const u64 DIALOG_REPEAT_DELAY = 150; // Shorter delay for dialog navigation
+
+		f32 leftX = TFE_Input::getAxis(AXIS_LEFT_X);
+		f32 magnitude = fabsf(leftX);
+		
+		if (magnitude > 0.1f) // GAMEPAD_DEADZONE
+		{
+			if (currentTime - lastDialogNavigationTime > DIALOG_REPEAT_DELAY)
+			{
+				if (leftX > 0.7f) // Right
+				{
+					s_gamepadDialogFocus = NEW_AGENT_YES;
+					lastDialogNavigationTime = currentTime;
+				}
+				else if (leftX < -0.7f) // Left
+				{
+					s_gamepadDialogFocus = NEW_AGENT_NO;
+					lastDialogNavigationTime = currentTime;
+				}
+			}
+		}
 	}
 
 	// TFE: Gamepad navigation implementation (referencing commit 508f2007fb63 for consistent behavior)
