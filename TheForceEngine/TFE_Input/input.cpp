@@ -540,8 +540,17 @@ namespace TFE_Input
 
 	void updateGamepadCursor()
 	{
+		// Debug: Always log menu context state
+		bool inMenuContext = TFE_FrontEndUI::isInMenuContext();
+		static bool lastMenuContext = false;
+		if (inMenuContext != lastMenuContext)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Menu context changed: %s", inMenuContext ? "TRUE" : "FALSE");
+			lastMenuContext = inMenuContext;
+		}
+
 		// Only process gamepad cursor movement when in menu context
-		if (!TFE_FrontEndUI::isInMenuContext())
+		if (!inMenuContext)
 		{
 			return;
 		}
@@ -550,12 +559,23 @@ namespace TFE_Input
 		f32 leftX = getAxis(AXIS_LEFT_X);
 		f32 leftY = getAxis(AXIS_LEFT_Y);
 
+		// Debug: Log stick input when non-zero
+		static f32 lastLeftX = 0.0f, lastLeftY = 0.0f;
+		if (fabsf(leftX - lastLeftX) > 0.01f || fabsf(leftY - lastLeftY) > 0.01f)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Left stick: X=%.3f, Y=%.3f", leftX, leftY);
+			lastLeftX = leftX;
+			lastLeftY = leftY;
+		}
+
 		// Apply deadzone
 		f32 magnitude = sqrtf(leftX * leftX + leftY * leftY);
 		if (magnitude < GAMEPAD_DEADZONE)
 		{
 			return; // No movement within deadzone
 		}
+
+		TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Stick movement detected - magnitude: %.3f", magnitude);
 
 		// Normalize and remove deadzone
 		leftX = leftX / magnitude;
@@ -570,6 +590,8 @@ namespace TFE_Input
 		s32 deltaX = (s32)(leftX * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
 		s32 deltaY = (s32)(leftY * acceleratedMagnitude * GAMEPAD_CURSOR_SPEED * frameTime);
 
+		TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
+
 		// Generate synthetic relative mouse movement
 		if (deltaX != 0 || deltaY != 0)
 		{
@@ -579,12 +601,25 @@ namespace TFE_Input
 
 	void handleGamepadMenuInput()
 	{
+		// Debug: Log button states
+		bool aButtonPressed = buttonPressed(CONTROLLER_BUTTON_A);
+		bool aButtonDown = buttonDown(CONTROLLER_BUTTON_A);
+		static bool lastAButtonDown = false;
+		
+		if (aButtonDown != lastAButtonDown)
+		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button state changed: pressed=%s, down=%s", 
+				aButtonPressed ? "TRUE" : "FALSE", aButtonDown ? "TRUE" : "FALSE");
+			lastAButtonDown = aButtonDown;
+		}
+
 		// Only process gamepad menu input when in menu context
 		if (!TFE_FrontEndUI::isInMenuContext())
 		{
 			// Reset gamepad mouse state when leaving menu context
 			if (s_gamepadMouseButtonDown)
 			{
+				TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "Leaving menu context - releasing mouse button");
 				setMouseButtonUp(MBUTTON_LEFT);
 				s_gamepadMouseButtonDown = false;
 			}
@@ -592,16 +627,15 @@ namespace TFE_Input
 		}
 
 		// Handle A button as left mouse click for menu interaction
-		bool aButtonPressed = buttonPressed(CONTROLLER_BUTTON_A);
-		bool aButtonDown = buttonDown(CONTROLLER_BUTTON_A);
-
 		if (aButtonPressed && !s_gamepadMouseButtonDown)
 		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button pressed - simulating mouse down");
 			setMouseButtonDown(MBUTTON_LEFT);
 			s_gamepadMouseButtonDown = true;
 		}
 		else if (!aButtonDown && s_gamepadMouseButtonDown)
 		{
+			TFE_System::logWrite(LOG_MSG, "GamepadMenuInput", "A button released - simulating mouse up");
 			setMouseButtonUp(MBUTTON_LEFT);
 			s_gamepadMouseButtonDown = false;
 		}

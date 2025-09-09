@@ -14,6 +14,15 @@
 # EXTERNAL cache entries
 ########################
 
+//Value Computed by CMake
+AdjustableHud_BINARY_DIR:STATIC=/home/runner/work/TheForceEngine/TheForceEngine/build/TheForceEngine/Mods/TFE/AdjustableHud
+
+//Value Computed by CMake
+AdjustableHud_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+AdjustableHud_SOURCE_DIR:STATIC=/home/runner/work/TheForceEngine/TheForceEngine/TheForceEngine/Mods/TFE/AdjustableHud
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 
@@ -21,7 +30,7 @@ CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 CMAKE_AR:FILEPATH=/usr/bin/ar
 
 //ASM compiler
-CMAKE_ASM_COMPILER:FILEPATH=/usr/bin/cc
+CMAKE_ASM_COMPILER:STRING=/usr/bin/cc
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -46,13 +55,15 @@ CMAKE_ASM_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 //Flags used by the ASM compiler during RELWITHDEBINFO builds.
 CMAKE_ASM_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
-CMAKE_BUILD_TYPE:STRING=Release
+//Choose the type of build, options are: None Debug Release RelWithDebInfo
+// MinSizeRel ...
+CMAKE_BUILD_TYPE:STRING=Debug
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
 
 //CXX compiler
-CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
+CMAKE_CXX_COMPILER:STRING=/usr/bin/c++
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -78,7 +89,7 @@ CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
 //C compiler
-CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
+CMAKE_C_COMPILER:STRING=/usr/bin/cc
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -299,6 +310,9 @@ ENABLE_SYSMIDI:BOOL=ON
 //Enable building “The Force Engine”
 ENABLE_TFE:BOOL=ON
 
+//Git command line client
+GIT_EXECUTABLE:FILEPATH=/usr/bin/git
+
 //Arguments to supply to pkg-config
 PKG_CONFIG_ARGN:STRING=
 
@@ -306,7 +320,7 @@ PKG_CONFIG_ARGN:STRING=
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
 
 //The directory containing a CMake configuration file for SDL2.
-SDL2_DIR:PATH=SDL2_DIR-NOTFOUND
+SDL2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/SDL2
 
 //Value Computed by CMake
 TheForceEngine_BINARY_DIR:STATIC=/home/runner/work/TheForceEngine/TheForceEngine/build
@@ -316,6 +330,12 @@ TheForceEngine_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 TheForceEngine_SOURCE_DIR:STATIC=/home/runner/work/TheForceEngine/TheForceEngine
+
+//Path to a library.
+pkgcfg_lib_SDL2_IMAGE_SDL2:FILEPATH=/usr/lib/x86_64-linux-gnu/libSDL2.so
+
+//Path to a library.
+pkgcfg_lib_SDL2_IMAGE_SDL2_image:FILEPATH=/usr/lib/x86_64-linux-gnu/libSDL2_image.so
 
 
 ########################
@@ -475,7 +495,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=26
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -522,14 +542,78 @@ CMAKE_UNAME:INTERNAL=/usr/bin/uname
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Test COMPILER_ENABLE_AUTOZERO
 COMPILER_ENABLE_AUTOZERO:INTERNAL=1
+//Details about finding Git
+FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[/usr/bin/git][v2.51.0()]
 //Details about finding PkgConfig
 FIND_PACKAGE_MESSAGE_DETAILS_PkgConfig:INTERNAL=[/usr/bin/pkg-config][v1.8.1()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
+//ADVANCED property for variable: GIT_EXECUTABLE
+GIT_EXECUTABLE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: PKG_CONFIG_ARGN
 PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
 PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
+RTMIDI_CFLAGS:INTERNAL=
+RTMIDI_CFLAGS_I:INTERNAL=
+RTMIDI_CFLAGS_OTHER:INTERNAL=
+RTMIDI_FOUND:INTERNAL=
+RTMIDI_INCLUDEDIR:INTERNAL=
+RTMIDI_LIBDIR:INTERNAL=
+RTMIDI_LIBS:INTERNAL=
+RTMIDI_LIBS_L:INTERNAL=
+RTMIDI_LIBS_OTHER:INTERNAL=
+RTMIDI_LIBS_PATHS:INTERNAL=
+RTMIDI_MODULE_NAME:INTERNAL=
+RTMIDI_PREFIX:INTERNAL=
+RTMIDI_STATIC_CFLAGS:INTERNAL=
+RTMIDI_STATIC_CFLAGS_I:INTERNAL=
+RTMIDI_STATIC_CFLAGS_OTHER:INTERNAL=
+RTMIDI_STATIC_LIBDIR:INTERNAL=
+RTMIDI_STATIC_LIBS:INTERNAL=
+RTMIDI_STATIC_LIBS_L:INTERNAL=
+RTMIDI_STATIC_LIBS_OTHER:INTERNAL=
+RTMIDI_STATIC_LIBS_PATHS:INTERNAL=
+RTMIDI_VERSION:INTERNAL=
+RTMIDI_rtmidi_INCLUDEDIR:INTERNAL=
+RTMIDI_rtmidi_LIBDIR:INTERNAL=
+RTMIDI_rtmidi_PREFIX:INTERNAL=
+RTMIDI_rtmidi_VERSION:INTERNAL=
+SDL2_IMAGE_CFLAGS:INTERNAL=-I/usr/include/SDL2;-I/usr/include;-D_REENTRANT;-I/usr/include/libpng16;-I/usr/include/x86_64-linux-gnu;-I/usr/include/webp
+SDL2_IMAGE_CFLAGS_I:INTERNAL=
+SDL2_IMAGE_CFLAGS_OTHER:INTERNAL=-D_REENTRANT
+SDL2_IMAGE_FOUND:INTERNAL=1
+SDL2_IMAGE_INCLUDEDIR:INTERNAL=/usr/include
+SDL2_IMAGE_INCLUDE_DIRS:INTERNAL=/usr/include/SDL2;/usr/include;/usr/include/libpng16;/usr/include/x86_64-linux-gnu;/usr/include/webp
+SDL2_IMAGE_LDFLAGS:INTERNAL=-L/usr/lib/x86_64-linux-gnu;-lSDL2_image;-lSDL2
+SDL2_IMAGE_LDFLAGS_OTHER:INTERNAL=
+SDL2_IMAGE_LIBDIR:INTERNAL=/usr/lib/x86_64-linux-gnu
+SDL2_IMAGE_LIBRARIES:INTERNAL=SDL2_image;SDL2
+SDL2_IMAGE_LIBRARY_DIRS:INTERNAL=/usr/lib/x86_64-linux-gnu
+SDL2_IMAGE_LIBS:INTERNAL=
+SDL2_IMAGE_LIBS_L:INTERNAL=
+SDL2_IMAGE_LIBS_OTHER:INTERNAL=
+SDL2_IMAGE_LIBS_PATHS:INTERNAL=
+SDL2_IMAGE_MODULE_NAME:INTERNAL=SDL2_image
+SDL2_IMAGE_PREFIX:INTERNAL=/usr
+SDL2_IMAGE_SDL2_image_INCLUDEDIR:INTERNAL=
+SDL2_IMAGE_SDL2_image_LIBDIR:INTERNAL=
+SDL2_IMAGE_SDL2_image_PREFIX:INTERNAL=
+SDL2_IMAGE_SDL2_image_VERSION:INTERNAL=
+SDL2_IMAGE_STATIC_CFLAGS:INTERNAL=-I/usr/include/SDL2;-I/usr/include;-D_REENTRANT;-I/usr/include/libpng16;-I/usr/include/x86_64-linux-gnu;-I/usr/include/webp;-DLZMA_API_STATIC
+SDL2_IMAGE_STATIC_CFLAGS_I:INTERNAL=
+SDL2_IMAGE_STATIC_CFLAGS_OTHER:INTERNAL=-D_REENTRANT;-DLZMA_API_STATIC
+SDL2_IMAGE_STATIC_INCLUDE_DIRS:INTERNAL=/usr/include/SDL2;/usr/include;/usr/include/libpng16;/usr/include/x86_64-linux-gnu;/usr/include/webp
+SDL2_IMAGE_STATIC_LDFLAGS:INTERNAL=-L/usr/lib/x86_64-linux-gnu;-lSDL2_image;-lSDL2;-lm;-lasound;-lm;-ldl;-lpthread;-lpulse;-pthread;-lsamplerate;-lX11;-lXext;-lXcursor;-lXi;-lXfixes;-lXrandr;-lXss;-ldrm;-lgbm;-lwayland-egl;-lwayland-client;-lwayland-cursor;-lxkbcommon;-ldecor-0;-lpthread;-L/usr/lib/x86_64-linux-gnu;-lpng16;-lm;-lz;-lm;-L/usr/lib/x86_64-linux-gnu;-L/usr/lib/x86_64-linux-gnu;-lz;-ljpeg;-ltiff;-lwebp;-lLerc;-ljbig;-lm;-L/usr/lib/x86_64-linux-gnu;-lwebp;-lm;-L/usr/lib/x86_64-linux-gnu;-lsharpyuv;-lm;-L/usr/lib;-lzstd;-pthread;-llzma;-pthread;-lpthread;-ljpeg;-ldeflate;-lz;-lwebpdemux;-L/usr/lib/x86_64-linux-gnu;-lm;-L/usr/lib/x86_64-linux-gnu;-lsharpyuv;-lm;-lwebp;-lm;-L/usr/lib/x86_64-linux-gnu;-lsharpyuv;-lm
+SDL2_IMAGE_STATIC_LDFLAGS_OTHER:INTERNAL=-pthread;-pthread;-pthread
+SDL2_IMAGE_STATIC_LIBDIR:INTERNAL=
+SDL2_IMAGE_STATIC_LIBRARIES:INTERNAL=SDL2_image;SDL2;m;asound;m;dl;pthread;pulse;samplerate;X11;Xext;Xcursor;Xi;Xfixes;Xrandr;Xss;drm;gbm;wayland-egl;wayland-client;wayland-cursor;xkbcommon;decor-0;pthread;png16;m;z;m;z;jpeg;tiff;webp;Lerc;jbig;m;webp;m;sharpyuv;m;zstd;lzma;pthread;jpeg;deflate;z;webpdemux;m;sharpyuv;m;webp;m;sharpyuv;m
+SDL2_IMAGE_STATIC_LIBRARY_DIRS:INTERNAL=/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu
+SDL2_IMAGE_STATIC_LIBS:INTERNAL=
+SDL2_IMAGE_STATIC_LIBS_L:INTERNAL=
+SDL2_IMAGE_STATIC_LIBS_OTHER:INTERNAL=
+SDL2_IMAGE_STATIC_LIBS_PATHS:INTERNAL=
+SDL2_IMAGE_VERSION:INTERNAL=2.8.2
 //linker supports push/pop state
 _CMAKE_CXX_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 //linker supports push/pop state
@@ -538,4 +622,12 @@ _CMAKE_C_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 _CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 //CMAKE_INSTALL_PREFIX during last run
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=/usr/local
+__pkg_config_arguments_SDL2_IMAGE:INTERNAL=REQUIRED;SDL2_image
+__pkg_config_checked_RTMIDI:INTERNAL=1
+__pkg_config_checked_SDL2_IMAGE:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_SDL2_IMAGE_SDL2
+pkgcfg_lib_SDL2_IMAGE_SDL2-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_SDL2_IMAGE_SDL2_image
+pkgcfg_lib_SDL2_IMAGE_SDL2_image-ADVANCED:INTERNAL=1
+prefix_result:INTERNAL=/usr/lib/x86_64-linux-gnu
 

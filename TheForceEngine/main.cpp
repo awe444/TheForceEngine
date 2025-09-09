@@ -162,6 +162,15 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_CONTROLLERAXISMOTION:
 		{
+			// Debug: Log left stick movement specifically
+			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX || Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+			{
+				f32 value = f32(Event.caxis.value) / 32768.0f;
+				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY) value = -value;
+				TFE_System::logWrite(LOG_MSG, "SDL_Input", "Left stick %s: %f (raw: %d)", 
+					Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ? "X" : "Y", value, Event.caxis.value);
+			}
+
 			// Axis are now handled interally so the deadzone can be changed.
 			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
 			{ TFE_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
@@ -193,6 +202,11 @@ void handleEvent(SDL_Event& Event)
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
+				// Debug: Log A button presses specifically
+				if (Event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+				{
+					TFE_System::logWrite(LOG_MSG, "SDL_Input", "A button pressed (SDL button %d)", Event.cbutton.button);
+				}
 				TFE_Input::setButtonDown(Button(Event.cbutton.button));
 			}
 		} break;
@@ -200,6 +214,11 @@ void handleEvent(SDL_Event& Event)
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
+				// Debug: Log A button releases specifically
+				if (Event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+				{
+					TFE_System::logWrite(LOG_MSG, "SDL_Input", "A button released (SDL button %d)", Event.cbutton.button);
+				}
 				TFE_Input::setButtonUp(Button(Event.cbutton.button));
 			}
 		} break;
