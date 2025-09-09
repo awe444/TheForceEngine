@@ -633,33 +633,23 @@ namespace TFE_Input
 			TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Generating mouse movement: deltaX=%d, deltaY=%d", deltaX, deltaY);
 		}
 
-		// Generate synthetic SDL mouse motion events for ImGui
+		// Update internal mouse position for game's cursor system
 		if (deltaX != 0 || deltaY != 0)
 		{
-			// Get current mouse position from SDL
-			int currentX, currentY;
-			SDL_GetMouseState(&currentX, &currentY);
+			// Get current mouse position from internal state
+			s32 currentX, currentY;
+			getMousePos(&currentX, &currentY);
 			
 			// Calculate new position
-			int newX = currentX + deltaX;
-			int newY = currentY + deltaY;
+			s32 newX = currentX + deltaX;
+			s32 newY = currentY + deltaY;
 			
-			// Create and push synthetic SDL mouse motion event
-			SDL_Event syntheticEvent;
-			syntheticEvent.type = SDL_MOUSEMOTION;
-			syntheticEvent.motion.which = 0; // Mouse device ID (0 = first mouse)
-			syntheticEvent.motion.state = 0; // Button state (we don't change buttons here)
-			syntheticEvent.motion.x = newX;
-			syntheticEvent.motion.y = newY;
-			syntheticEvent.motion.xrel = deltaX;
-			syntheticEvent.motion.yrel = deltaY;
-			
-			// Push the event to SDL's event queue
-			SDL_PushEvent(&syntheticEvent);
+			// Update internal mouse position - this will be used by menu_handleMousePosition()
+			setMousePos(newX, newY);
 			
 			if (shouldLog)
 			{
-				TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Injected SDL mouse motion: (%d,%d) -> (%d,%d)", 
+				TFE_System::logWrite(LOG_MSG, "GamepadCursor", "Updated internal mouse position: (%d,%d) -> (%d,%d)", 
 					currentX, currentY, newX, newY);
 			}
 		}
